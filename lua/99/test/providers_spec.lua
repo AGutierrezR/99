@@ -47,6 +47,26 @@ describe("providers", function()
     end)
   end)
 
+  describe("CopilotProvider", function()
+    it("builds correct command with model", function()
+      local request = { model = "claude-sonnet-4.5" }
+      local cmd =
+        Providers.CopilotProvider._build_command(nil, "test query", request)
+      eq({
+        "copilot",
+        "--allow-all",
+        "--model",
+        "claude-sonnet-4.5",
+        "--prompt",
+        "test query",
+      }, cmd)
+    end)
+
+    it("has correct default model", function()
+      eq("claude-sonnet-4.5", Providers.CopilotProvider._get_default_model())
+    end)
+  end)
+
   describe("CursorAgentProvider", function()
     it("builds correct command with model", function()
       local request = { model = "anthropic/claude-sonnet-4-5" }
@@ -84,6 +104,28 @@ describe("providers", function()
 
     it("has correct default model", function()
       eq("auto", Providers.GeminiCLIProvider._get_default_model())
+    end)
+  end)
+
+  describe("PiProvider", function()
+    it("builds correct command with model", function()
+      local request = { model = "anthropic/claude-sonnet-4-5" }
+      local cmd =
+        Providers.PiProvider._build_command(nil, "test query", request)
+      eq({
+        "pi",
+        "--print",
+        "--model",
+        "anthropic/claude-sonnet-4-5",
+        "test query",
+      }, cmd)
+    end)
+
+    it("has correct default model", function()
+      eq(
+        "anthropic/claude-sonnet-4-5",
+        Providers.PiProvider._get_default_model()
+      )
     end)
   end)
 
@@ -140,6 +182,28 @@ describe("providers", function()
       end
     )
 
+    it(
+      "uses CopilotProvider default model when provider specified but no model",
+      function()
+        local _99 = require("99")
+
+        _99.setup({ provider = Providers.CopilotProvider })
+        local state = _99.__get_state()
+        eq("claude-sonnet-4.5", state.model)
+      end
+    )
+
+    it(
+      "uses PiProvider default model when provider specified but no model",
+      function()
+        local _99 = require("99")
+
+        _99.setup({ provider = Providers.PiProvider })
+        local state = _99.__get_state()
+        eq("anthropic/claude-sonnet-4-5", state.model)
+      end
+    )
+
     it("uses custom model when both provider and model specified", function()
       local _99 = require("99")
 
@@ -176,6 +240,8 @@ describe("providers", function()
       eq("function", type(Providers.ClaudeCodeProvider.make_request))
       eq("function", type(Providers.CursorAgentProvider.make_request))
       eq("function", type(Providers.GeminiCLIProvider.make_request))
+      eq("function", type(Providers.CopilotProvider.make_request))
+      eq("function", type(Providers.PiProvider.make_request))
     end)
   end)
 end)

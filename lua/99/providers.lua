@@ -228,6 +228,33 @@ function ClaudeCodeProvider.fetch_models(callback)
   }, nil)
 end
 
+--- @class CopilotProvider : _99.Providers.BaseProvider
+local CopilotProvider = setmetatable({}, { __index = BaseProvider })
+
+--- @param query string
+--- @param context _99.Prompt
+--- @return string[]
+function CopilotProvider._build_command(_, query, context)
+  return {
+    "copilot",
+    "--allow-all-tools",
+    "--model",
+    context.model,
+    "--prompt",
+    query,
+  }
+end
+
+--- @return string
+function CopilotProvider._get_provider_name()
+  return "CopilotProvider"
+end
+
+--- @return string
+function CopilotProvider._get_default_model()
+  return "claude-sonnet-4.5"
+end
+
 --- @class CursorAgentProvider : _99.Providers.BaseProvider
 local CursorAgentProvider = setmetatable({}, { __index = BaseProvider })
 
@@ -339,11 +366,39 @@ function GeminiCLIProvider._get_default_model()
   return "auto"
 end
 
+--- @class PiProvider : _99.Providers.BaseProvider
+local PiProvider = setmetatable({}, { __index = BaseProvider })
+
+--- @param query string
+--- @param context _99.Prompt
+--- @return string[]
+function PiProvider._build_command(_, query, context)
+  return {
+    "pi",
+    "--print",
+    "--model",
+    context.model,
+    query,
+  }
+end
+
+--- @return string
+function PiProvider._get_provider_name()
+  return "PiProvider"
+end
+
+--- @return string
+function PiProvider._get_default_model()
+  return "anthropic/claude-sonnet-4-5"
+end
+
 return {
   BaseProvider = BaseProvider,
   OpenCodeProvider = OpenCodeProvider,
   ClaudeCodeProvider = ClaudeCodeProvider,
+  CopilotProvider = CopilotProvider,
   CursorAgentProvider = CursorAgentProvider,
   KiroProvider = KiroProvider,
   GeminiCLIProvider = GeminiCLIProvider,
+  PiProvider = PiProvider,
 }

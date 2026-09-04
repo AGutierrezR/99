@@ -436,6 +436,9 @@ Referenced content is automatically resolved and injected into the AI context. N
 | `ClaudeCodeProvider` | `claude` | `claude-sonnet-4-5` |
 | `CursorAgentProvider` | `cursor-agent` | `sonnet-4.5` |
 | `GeminiCLIProvider` | `gemini` | `auto` |
+| `KiroProvider` | `kiro-cli` | `claude-sonnet-4.5` |
+| `CopilotProvider` | `copilot` | `claude-sonnet-4.5` |
+| `PiProvider` | `pi` | `anthropic/claude-sonnet-4-5` |
 
 ```lua
 _99.setup({
