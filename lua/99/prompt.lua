@@ -66,6 +66,7 @@ local filetype_map = {
 --- @field agent_context string[]
 --- @field tmp_file string
 --- @field marks table<string, _99.Mark>
+--- @field additional_rules _99.Agents.Rule[]
 --- @field logger _99.Logger
 --- @field xid number
 --- @field clean_ups (fun(): nil)[]
@@ -90,6 +91,7 @@ local function set_defaults(context, _99)
   context.state = "ready"
   context._99 = _99
   context.user_prompt = ""
+  context.additional_rules = {}
   context.clean_ups = {}
   context.md_file_names = copy(_99.md_files)
   context.model = _99.model

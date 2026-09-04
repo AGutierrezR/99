@@ -210,6 +210,16 @@ local _99_state
 --- be killed (OpenCode) and any result will be discared
 --- @field clear_previous_requests fun(): nil
 --- clears all previous search and visual operations
+--- @field repeat_last fun(opts?: _99.ops.Opts): _99.TraceID | nil
+--- repeats the last request (search, vibe, tutorial, or visual) using the same
+--- prompt and additional rules that were used the first time.  For a visual
+--- request, the saved prompt is applied to your current selection.
+---
+--- ```lua
+--- vim.keymap.set("n", "<leader>9.", function()
+---   _99.repeat_last()
+--- end)
+--- ```
 --- @field Extensions _99.Extensions
 --- check out Worker for cool abstraction on search and vibe
 local _99 = {
@@ -252,6 +262,7 @@ local function capture_prompt(cb, name, context, opts, capture_content)
       end
       opts.additional_prompt = response
       context.user_prompt = response
+      context.additional_rules = opts.additional_rules
       cb(context, opts)
     end,
     on_load = function()
@@ -321,6 +332,7 @@ function _99.vibe(opts)
   local context = Prompt.vibe(_99_state)
   if o.additional_prompt then
     context.user_prompt = o.additional_prompt
+    context.additional_rules = o.additional_rules
     ops.vibe(context, o)
   else
     capture_prompt(ops.vibe, "Vibe", context, o)
@@ -335,6 +347,7 @@ function _99.search(opts)
   local context = Prompt.search(_99_state)
   if o.additional_prompt then
     context.user_prompt = o.additional_prompt
+    context.additional_rules = o.additional_rules
     ops.search(context, o)
   else
     capture_prompt(ops.search, "Search", context, o)
@@ -348,6 +361,7 @@ function _99.tutorial(opts)
   local context = Prompt.tutorial(_99_state)
   if opts.additional_prompt then
     context.user_prompt = opts.additional_prompt
+    context.additional_rules = opts.additional_rules
     ops.tutorial(context, opts)
   else
     capture_prompt(ops.tutorial, "Tutorial", context, opts)
@@ -361,6 +375,7 @@ function _99.visual(opts)
   local context = Prompt.visual(_99_state)
   if opts.additional_prompt then
     context.user_prompt = opts.additional_prompt
+    context.additional_rules = opts.additional_rules
     ops.over_range(context, opts)
   else
     capture_prompt(ops.over_range, "Visual", context, opts)
@@ -399,6 +414,33 @@ end
 
 function _99.clear_previous_requests()
   _99_state.tracking:clear_history()
+end
+
+--- @param opts? _99.ops.Opts
+--- @return _99.TraceID | nil
+function _99.repeat_last(opts)
+  local last = _99_state.tracking:last_completed_request()
+  if not last then
+    vim.notify("99: no previous request to repeat", vim.log.levels.WARN)
+    return nil
+  end
+
+  opts = process_opts(opts)
+  opts.additional_prompt = last.user_prompt
+  opts.additional_rules = opts.additional_rules or {}
+  for _, rule in ipairs(last.additional_rules or {}) do
+    table.insert(opts.additional_rules, rule)
+  end
+
+  if last.operation == "search" then
+    return _99.search(opts)
+  elseif last.operation == "vibe" then
+    return _99.vibe(opts)
+  elseif last.operation == "tutorial" then
+    _99.tutorial(opts)
+  elseif last.operation == "visual" then
+    return _99.visual(opts)
+  end
 end
 
 --- if you touch this function you will be fired

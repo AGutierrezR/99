@@ -87,13 +87,9 @@ through `search` and `work`
                         -- max_files = 5000,            -- cap on total discovered files
                         -- exclude = { ".env", ".env.*", "node_modules", ".git", ... },
                     },
-                    --- File Discovery:
-                    --- - In git repos: Uses `git ls-files` which automatically respects .gitignore
-                    --- - Non-git repos: Falls back to filesystem scanning with manual excludes
-                    --- - Both methods apply the configured `exclude` list on top of gitignore
 
-                    --- What autocomplete engine to use. Defaults to native (built-in) if not specified.
-                    source = "native", -- "native" (default), "cmp", or "blink"
+                    --- What autocomplete you use.
+                    source = "cmp" | "blink",
                 },
 
                 --- WARNING: if you change cwd then this is likely broken
@@ -153,6 +149,7 @@ See search for more details
 | `view_logs` | `fun(): nil` | - |
 | `stop_all_requests` | `fun(): nil` | - |
 | `clear_previous_requests` | `fun(): nil` | - |
+| `repeat_last` | `fun(opts?: _99.ops.Opts): _99.TraceID \| nil` | - |
 | `Extensions` | `_99.Extensions` | - |
 
 ### API
@@ -167,7 +164,8 @@ Performs a search across your project with the prompt you provide and return out
 locations with notes that will be put into your quick fix list.
 
 #### vibe
-No description.
+will ask opencode or whatever provider currently being used to perform a vibe
+session.
 
 #### open
 Opens a selection window for you to select the last interaction to open
@@ -180,8 +178,8 @@ takes your current selection and sends that along with the prompt provided and r
 your visual selection with the results
 
 #### view_logs
-views the most recent logs and setups the machine to view older and new logs
-this is still pretty rough and will change in the near future
+view_logs allows you to select the request you want to see and then you
+get to see the logs.
 
 #### stop_all_requests
 stops all in flight requests.  this means that the underlying process will
@@ -189,6 +187,17 @@ be killed (OpenCode) and any result will be discared
 
 #### clear_previous_requests
 clears all previous search and visual operations
+
+#### repeat_last
+repeats the last request (search, vibe, tutorial, or visual) using the same
+prompt and additional rules that were used the first time.  For a visual
+request, the saved prompt is applied to your current selection.
+
+```lua
+vim.keymap.set("n", "<leader>9.", function()
+  _99.repeat_last()
+end)
+```
 
 #### Extensions
 check out Worker for cool abstraction on search and vibe
@@ -227,9 +236,10 @@ No description.
 | --- | --- | --- |
 | `logger` | `_99.Logger.Options \| nil` | - |
 | `model` | `string \| nil` | - |
-| `in_flight_options` | `_99.InFlight.Opts \| nil` | - |
+| `in_flight_options` | `_99.StatusWindow.Opts \| nil` | - |
 | `md_files` | `string[] \| nil` | - |
 | `provider` | `_99.Providers.BaseProvider \| nil` | - |
+| `provider_extra_args` | `string[] \| nil` | - |
 | `display_errors` | `boolean \| nil` | - |
 | `auto_add_skills` | `boolean \| nil` | - |
 | `completion` | `_99.Completion \| nil` | - |
@@ -252,6 +262,9 @@ No description.
 #### provider
 No description.
 
+#### provider_extra_args
+No description.
+
 #### display_errors
 No description.
 
@@ -262,6 +275,27 @@ No description.
 No description.
 
 #### tmp_dir
+No description.
+
+## _99.State.Tracking
+No description.
+
+### Description
+| Name | Type | Default Value |
+| --- | --- | --- |
+| `history` | `_99.Prompt[]` | - |
+| `id_to_request` | `table<number, _99.Prompt>` | - |
+| `setup` | `fun(opts: _99.State.Tracking.Config.Options): nil` | - |
+
+### API
+
+#### history
+No description.
+
+#### id_to_request
+No description.
+
+#### setup
 No description.
 
 ## _99.ops.Opts
@@ -346,28 +380,6 @@ No description.
 #### files
 No description.
 
-## _99.InFlight.Opts
-this is pure a class for testing.   helps controls timings
-
-### Description
-| Name | Type | Default Value |
-| --- | --- | --- |
-| `throbber_opts` | `_99.Throbber.Opts \| nil` | - |
-| `in_flight_interval` | `number \| nil` | - |
-| `enable` | `boolean \| nil` | - |
-
-### API
-
-#### throbber_opts
-options for the throbber in the top left
-
-#### in_flight_interval
-frequency in which the in-flight interval checks to see if it should be
-displayed / removed
-
-#### enable
-defaults to true
-
 ## _99.Logger.Options
 No description.
 
@@ -397,6 +409,28 @@ No description.
 #### max_requests_cached
 No description.
 
+## _99.StatusWindow.Opts
+this is pure a class for testing.   helps controls timings
+
+### Description
+| Name | Type | Default Value |
+| --- | --- | --- |
+| `throbber_opts` | `_99.Throbber.Opts \| nil` | - |
+| `in_flight_interval` | `number \| nil` | - |
+| `enable` | `boolean \| nil` | - |
+
+### API
+
+#### throbber_opts
+options for the throbber in the top left
+
+#### in_flight_interval
+frequency in which the in-flight interval checks to see if it should be
+displayed / removed
+
+#### enable
+defaults to true
+
 ## _99.Agents.Rule
 No description.
 
@@ -423,9 +457,9 @@ No description.
 When prompting, you can reference rules and files to add context to your request.
 
 - `#` references rules — type `#` in the prompt to autocomplete rule files from your configured rule directories
-- `@` references files — type `@` to fuzzy-search project files. This will exclude files that are in .gitignore.
+- `@` references files — type `@` to fuzzy-search project files
 
-Referenced content is automatically resolved and injected into the AI context. Native completions work by default. For nvim-cmp or blink.cmp, set `source = "cmp"` or `source = "blink"`.
+Referenced content is automatically resolved and injected into the AI context. Requires cmp (`source = "cmp"` in your completion config).
 
 ## Providers
 99 supports multiple AI CLI backends. Set `provider` in your setup to switch. If you don't set `model`, the provider's default is used.
@@ -436,9 +470,6 @@ Referenced content is automatically resolved and injected into the AI context. N
 | `ClaudeCodeProvider` | `claude` | `claude-sonnet-4-5` |
 | `CursorAgentProvider` | `cursor-agent` | `sonnet-4.5` |
 | `GeminiCLIProvider` | `gemini` | `auto` |
-| `KiroProvider` | `kiro-cli` | `claude-sonnet-4.5` |
-| `CopilotProvider` | `copilot` | `claude-sonnet-4.5` |
-| `PiProvider` | `pi` | `anthropic/claude-sonnet-4-5` |
 
 ```lua
 _99.setup({

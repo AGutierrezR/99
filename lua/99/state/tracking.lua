@@ -126,6 +126,17 @@ function Tracking:successful()
   return requests
 end
 
+--- @return _99.Prompt | nil
+function Tracking:last_completed_request()
+  for i = #self.history, 1, -1 do
+    local request = self.history[i]
+    if request.state ~= "requesting" then
+      return request
+    end
+  end
+  return nil
+end
+
 --- @return _99.State.Tracking.Serialized
 function Tracking:serialize()
   local sc = Tracking.__config.serialize_count
