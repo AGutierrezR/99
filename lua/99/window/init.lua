@@ -467,6 +467,7 @@ function M.capture_input(name, opts)
 
   set_defaul_win_options(win, "99-prompt")
   vim.api.nvim_set_current_win(win.win_id)
+  vim.cmd("startinsert")
 
   opts.keymap = opts.keymap or {}
   opts.keymap.q = "cancel"
