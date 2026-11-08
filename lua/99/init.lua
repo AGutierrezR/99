@@ -59,6 +59,7 @@ end
 --- @field auto_add_skills? boolean
 --- @field completion? _99.Completion
 --- @field tmp_dir? string
+--- @field prompts? table
 
 --- @type _99.State
 local _99_state

@@ -79,9 +79,34 @@ function State.new(opts)
   _99_state.completion.custom_rules = _99_state.completion.custom_rules or {}
   _99_state.completion.files = _99_state.completion.files or {}
 
-  --- TODO: Prompt overrides would be a great thing, we just have to get there
-  --- for now, i am going to have this as just a hardcoded ... thing
-  _99_state.prompts = require("99.prompt-settings")
+  --- Allow overriding prompt templates via opts.prompts.
+  --- opts.prompts may be a full prompt-settings module shape:
+  ---   { prompts = { role = function() ... end, ... }, tmp_file_location = fn, ... }
+  --- or a partial table merged on top of the defaults.
+  local default_prompts = require("99.prompt-settings")
+  local prompt_overrides = opts.prompts
+  if type(prompt_overrides) == "table" then
+    local merged = vim.deepcopy(default_prompts)
+    if type(prompt_overrides.prompts) == "table" then
+      merged.prompts = merged.prompts or {}
+      for key, value in pairs(prompt_overrides.prompts) do
+        merged.prompts[key] = value
+      end
+    end
+    for key, value in pairs(prompt_overrides) do
+      if key ~= "prompts" then
+        if default_prompts.prompts and default_prompts.prompts[key] ~= nil then
+          merged.prompts = merged.prompts or {}
+          merged.prompts[key] = value
+        else
+          merged[key] = value
+        end
+      end
+    end
+    _99_state.prompts = merged
+  else
+    _99_state.prompts = default_prompts
+  end
 
   local previous = read_state_from_tmp(opts)
   _99_state.tracking = Tracking.new(_99_state, previous)

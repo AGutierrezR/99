@@ -14,8 +14,10 @@ I believe that hand coding is still very important and the best products i know
 of today still do that (see opencode vs claude code)
 
 ## Warning
-1. Prompts are temporary right now. they could be massively improved
-2. Officially in beta, but api can still change.  unlikely at this point
+1. Prompts are still evolving and can be massively improved
+2. Prompt templates can now be overridden via `opts.prompts` in `setup()` (merged over defaults)
+3. The `role` prompt is now injected into every request context
+4. Officially in beta, but api can still change.  unlikely at this point
 
 # 99
 The AI Neovim experience
@@ -244,6 +246,7 @@ No description.
 | `auto_add_skills` | `boolean \| nil` | - |
 | `completion` | `_99.Completion \| nil` | - |
 | `tmp_dir` | `string \| nil` | - |
+| `prompts` | `table \| nil` | - |
 
 ### API
 
@@ -276,6 +279,9 @@ No description.
 
 #### tmp_dir
 No description.
+
+#### prompts
+Override prompt templates merged over defaults (e.g. `prompts = { prompts = { role = function() return "..." end } }`).
 
 ## _99.State.Tracking
 No description.
