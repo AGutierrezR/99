@@ -151,7 +151,6 @@ See search for more details
 | `view_logs` | `fun(): nil` | - |
 | `stop_all_requests` | `fun(): nil` | - |
 | `clear_previous_requests` | `fun(): nil` | - |
-| `repeat_last` | `fun(opts?: _99.ops.Opts): _99.TraceID \| nil` | - |
 | `Extensions` | `_99.Extensions` | - |
 
 ### API
@@ -189,17 +188,6 @@ be killed (OpenCode) and any result will be discared
 
 #### clear_previous_requests
 clears all previous search and visual operations
-
-#### repeat_last
-repeats the last request (search, vibe, tutorial, or visual) using the same
-prompt and additional rules that were used the first time.  For a visual
-request, the saved prompt is applied to your current selection.
-
-```lua
-vim.keymap.set("n", "<leader>9.", function()
-  _99.repeat_last()
-end)
-```
 
 #### Extensions
 check out Worker for cool abstraction on search and vibe

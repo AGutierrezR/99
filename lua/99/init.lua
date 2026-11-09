@@ -215,16 +215,6 @@ local _99_state
 --- be killed (OpenCode) and any result will be discared
 --- @field clear_previous_requests fun(): nil
 --- clears all previous search and visual operations
---- @field repeat_last fun(opts?: _99.ops.Opts): _99.TraceID | nil
---- repeats the last request (search, vibe, tutorial, or visual) using the same
---- prompt and additional rules that were used the first time.  For a visual
---- request, the saved prompt is applied to your current selection.
----
---- ```lua
---- vim.keymap.set("n", "<leader>9.", function()
----   _99.repeat_last()
---- end)
---- ```
 --- @field Extensions _99.Extensions
 --- check out Worker for cool abstraction on search and vibe
 local _99 = {
@@ -419,33 +409,6 @@ end
 
 function _99.clear_previous_requests()
   _99_state.tracking:clear_history()
-end
-
---- @param opts? _99.ops.Opts
---- @return _99.TraceID | nil
-function _99.repeat_last(opts)
-  local last = _99_state.tracking:last_completed_request()
-  if not last then
-    vim.notify("99: no previous request to repeat", vim.log.levels.WARN)
-    return nil
-  end
-
-  opts = process_opts(opts)
-  opts.additional_prompt = last.user_prompt
-  opts.additional_rules = opts.additional_rules or {}
-  for _, rule in ipairs(last.additional_rules or {}) do
-    table.insert(opts.additional_rules, rule)
-  end
-
-  if last.operation == "search" then
-    return _99.search(opts)
-  elseif last.operation == "vibe" then
-    return _99.vibe(opts)
-  elseif last.operation == "tutorial" then
-    _99.tutorial(opts)
-  elseif last.operation == "visual" then
-    return _99.visual(opts)
-  end
 end
 
 --- if you touch this function you will be fired
