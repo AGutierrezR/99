@@ -31,6 +31,8 @@ end
 --- @field display_errors boolean
 --- @field provider_override _99.Providers.BaseProvider?
 --- @field provider_extra_args string[]
+--- @field max_retries number
+--- @field validate_output function?
 --- @field rules _99.Agents.Rules
 --- @field tracking _99.State.Tracking
 --- @field __tmp_dir string | nil
@@ -75,6 +77,8 @@ function State.new(opts)
 
   _99_state.provider_override = opts.provider
   _99_state.provider_extra_args = opts.provider_extra_args or {}
+  _99_state.max_retries = opts.max_retries or 1
+  _99_state.validate_output = opts.validate_output
   _99_state.completion = opts.completion or default_completion()
   _99_state.completion.custom_rules = _99_state.completion.custom_rules or {}
   _99_state.completion.files = _99_state.completion.files or {}
@@ -150,5 +154,7 @@ function State:refresh_rules()
   self.rules = Agents.rules(self)
   Extensions.refresh(self)
 end
+
+
 
 return State

@@ -70,86 +70,131 @@ function BaseProvider:make_request(query, context, observer)
     end
   )
 
-  local stdout_lines = {}
-  local command = self:_build_command(query, context)
-  local extra_args = context._99 and context._99.provider_extra_args or {}
-  if #extra_args > 0 then
-    vim.list_extend(command, extra_args)
+  local max_retries = 0
+  local validate_output = nil
+  if context._99 then
+    max_retries = context._99.max_retries or 0
+    validate_output = context._99.validate_output
   end
-  logger:debug("make_request", "command", command)
 
-  local proc = vim.system(
-    command,
-    {
-      text = true,
-      stdout = vim.schedule_wrap(function(err, data)
-        logger:debug("stdout", "data", data)
+  local function is_valid(res)
+    if type(validate_output) == "function" then
+      local ok, v = pcall(validate_output, res, context)
+      return ok and v == true
+    end
+    return res ~= nil and vim.trim(res) ~= ""
+  end
+
+  local attempt_count = 0
+
+  local function attempt()
+    if context:is_cancelled() then
+      return
+    end
+    attempt_count = attempt_count + 1
+    local stdout_lines = {}
+    local command = self:_build_command(query, context)
+    local extra_args = context._99 and context._99.provider_extra_args or {}
+    if #extra_args > 0 then
+      vim.list_extend(command, extra_args)
+    end
+    logger:debug("make_request", "command", command, "attempt", attempt_count)
+
+    local proc = vim.system(
+      command,
+      {
+        text = true,
+        stdout = vim.schedule_wrap(function(err, data)
+          logger:debug("stdout", "data", data)
+          if context:is_cancelled() then
+            once_complete("cancelled", "")
+            return
+          end
+          if err and err ~= "" then
+            logger:debug("stdout#error", "err", err)
+          end
+          if not err and data then
+            table.insert(stdout_lines, data)
+            observer.on_stdout(data)
+          end
+        end),
+        stderr = vim.schedule_wrap(function(err, data)
+          logger:debug("stderr", "data", data)
+          if context:is_cancelled() then
+            once_complete("cancelled", "")
+            return
+          end
+          if err and err ~= "" then
+            logger:debug("stderr#error", "err", err)
+          end
+          if not err then
+            observer.on_stderr(data)
+          end
+        end),
+      },
+      vim.schedule_wrap(function(obj)
         if context:is_cancelled() then
           once_complete("cancelled", "")
+          logger:debug("on_complete: request has been cancelled")
           return
         end
-        if err and err ~= "" then
-          logger:debug("stdout#error", "err", err)
-        end
-        if not err and data then
-          table.insert(stdout_lines, data)
-          observer.on_stdout(data)
-        end
-      end),
-      stderr = vim.schedule_wrap(function(err, data)
-        logger:debug("stderr", "data", data)
-        if context:is_cancelled() then
-          once_complete("cancelled", "")
-          return
-        end
-        if err and err ~= "" then
-          logger:debug("stderr#error", "err", err)
-        end
-        if not err then
-          observer.on_stderr(data)
-        end
-      end),
-    },
-    vim.schedule_wrap(function(obj)
-      if context:is_cancelled() then
-        once_complete("cancelled", "")
-        logger:debug("on_complete: request has been cancelled")
-        return
-      end
-      if obj.code ~= 0 then
-        local str =
-          string.format("process exit code: %d\n%s", obj.code, vim.inspect(obj))
-        once_complete("failed", str)
-        logger:fatal(
-          self:_get_provider_name() .. " make_query failed: " .. str,
-          "obj from results",
-          obj
-        )
-      else
-        vim.schedule(function()
-          local ok, res = self:_retrieve_response(context)
-          if ok then
-            if res == "" and #stdout_lines > 0 then
-              res = table.concat(stdout_lines, "\n")
-              logger:debug(
-                "tmp_file was empty, falling back to stdout",
-                "response",
-                res
+        if obj.code ~= 0 then
+          local str =
+            string.format("process exit code: %d\n%s", obj.code, vim.inspect(obj))
+          if attempt_count <= max_retries then
+            attempt()
+            return
+          end
+          once_complete("failed", str)
+          logger:fatal(
+            self:_get_provider_name() .. " make_query failed: " .. str,
+            "obj from results",
+            obj
+          )
+        else
+          vim.schedule(function()
+            local ok, res = self:_retrieve_response(context)
+            if ok then
+              if res == "" and #stdout_lines > 0 then
+                res = table.concat(stdout_lines, "\n")
+                logger:debug(
+                  "tmp_file was empty, falling back to stdout",
+                  "response",
+                  res
+                )
+              end
+              if context:is_cancelled() then
+                once_complete("cancelled", "")
+                return
+              end
+              if not is_valid(res) and attempt_count <= max_retries then
+                attempt()
+                return
+              end
+              once_complete("success", res)
+            else
+              if context:is_cancelled() then
+                once_complete("cancelled", "")
+                return
+              end
+              if attempt_count <= max_retries then
+                attempt()
+                return
+              end
+              once_complete(
+                "failed",
+                "unable to retrieve response from temp file"
               )
             end
-            once_complete("success", res)
-          else
-            once_complete(
-              "failed",
-              "unable to retrieve response from temp file"
-            )
-          end
-        end)
-      end
-    end)
-  )
+          end)
+        end
+      end)
+    )
 
-  context:_set_process(proc)
+    context:_set_process(proc)
+  end
+
+  attempt()
 end
 
 --- @class OpenCodeProvider : _99.Providers.BaseProvider

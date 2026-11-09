@@ -60,6 +60,8 @@ end
 --- @field completion? _99.Completion
 --- @field tmp_dir? string
 --- @field prompts? table
+--- @field max_retries? number
+--- @field validate_output? fun(response: string, context: _99.Prompt): boolean
 
 --- @type _99.State
 local _99_state
@@ -500,6 +502,19 @@ function _99.setup(opts)
     assert(type(opts.tmp_dir) == "string", "opts.tmp_dir must be a string")
   end
   _99_state.__tmp_dir = opts.tmp_dir
+
+  if opts.max_retries ~= nil then
+    assert(
+      type(opts.max_retries) == "number",
+      "opts.max_retries must be a number"
+    )
+  end
+  if opts.validate_output ~= nil then
+    assert(
+      type(opts.validate_output) == "function",
+      "opts.validate_output must be a function"
+    )
+  end
 
   _99_state.display_errors = opts.display_errors or false
   _99_state:refresh_rules()

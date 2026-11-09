@@ -247,7 +247,8 @@ No description.
 | `completion` | `_99.Completion \| nil` | - |
 | `tmp_dir` | `string \| nil` | - |
 | `prompts` | `table \| nil` | - |
-
+| `max_retries` | `number \| nil` | 1 |
+| `validate_output` | `function \| nil` | - |
 ### API
 
 #### logger
@@ -282,6 +283,12 @@ No description.
 
 #### prompts
 Override prompt templates merged over defaults (e.g. `prompts = { prompts = { role = function() return "..." end } }`).
+
+#### max_retries
+Number of automatic retries when output is invalid/empty (default 1).
+
+#### validate_output
+Custom validation function `fun(response, context) -> boolean` for retry logic.
 
 ## _99.State.Tracking
 No description.

@@ -328,5 +328,52 @@ describe("providers", function()
       eq("success", result.status)
       eq("file response", result.text)
     end)
+
+    it("retries when command exits non-zero", function()
+      local _99 = require("99")
+      _99.setup({ max_retries = 1 })
+
+      local state = _99.__get_state()
+      local Prompt = require("99.prompt")
+      local context = Prompt.search(state)
+      context.tmp_file = vim.fn.tempname()
+      local tmpf = io.open(context.tmp_file, "w")
+      if tmpf then tmpf:write("") tmpf:close() end
+
+      local attempts = 0
+      local retry_provider = setmetatable({}, { __index = Providers.BaseProvider })
+      function retry_provider._build_command(_, _, _)
+        attempts = attempts + 1
+        if attempts == 1 then
+          return { "bash", "-c", "exit 1" }
+        end
+        return { "bash", "-c", "echo ok" }
+      end
+      function retry_provider._get_provider_name()
+        return "retry_test"
+      end
+
+      local result = nil
+      local completed = false
+      local observer = {
+        on_start = function() end,
+        on_stdout = function() end,
+        on_stderr = function() end,
+        on_complete = function(status, text)
+          result = { status = status, text = text }
+          completed = true
+        end,
+      }
+
+      assert.are.equal(1, context._99.max_retries)
+      retry_provider:make_request("test", context, observer)
+
+      vim.wait(5000, function()
+        return completed
+      end)
+
+      eq("success", result.status)
+      eq("ok", vim.trim(result.text))
+    end)
   end)
 end)
