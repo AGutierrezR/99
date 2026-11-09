@@ -92,7 +92,6 @@ function BaseProvider:make_request(query, context, observer)
       return
     end
     attempt_count = attempt_count + 1
-    local stdout_lines = {}
     local command = self:_build_command(query, context)
     local extra_args = context._99 and context._99.provider_extra_args or {}
     if #extra_args > 0 then
@@ -114,7 +113,6 @@ function BaseProvider:make_request(query, context, observer)
             logger:debug("stdout#error", "err", err)
           end
           if not err and data then
-            table.insert(stdout_lines, data)
             observer.on_stdout(data)
           end
         end),
@@ -158,14 +156,6 @@ function BaseProvider:make_request(query, context, observer)
           vim.schedule(function()
             local ok, res = self:_retrieve_response(context)
             if ok then
-              if res == "" and #stdout_lines > 0 then
-                res = table.concat(stdout_lines, "\n")
-                logger:debug(
-                  "tmp_file was empty, falling back to stdout",
-                  "response",
-                  res
-                )
-              end
               if context:is_cancelled() then
                 once_complete("cancelled", "")
                 return

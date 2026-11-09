@@ -244,51 +244,6 @@ describe("providers", function()
       eq("function", type(Providers.PiProvider.make_request))
     end)
 
-    it("falls back to stdout when tmp_file is empty", function()
-      local _99 = require("99")
-      _99.setup({})
-
-      local state = _99.__get_state()
-      local Prompt = require("99.prompt")
-      local context = Prompt.search(state)
-      context.tmp_file = vim.fn.tempname()
-      local file = io.open(context.tmp_file, "w")
-      file:write("")
-      file:close()
-
-      local stdout_provider = setmetatable(
-        {},
-        { __index = Providers.BaseProvider }
-      )
-      function stdout_provider._build_command(_, _, _)
-        return { "bash", "-c", "echo 'stdout response'" }
-      end
-      function stdout_provider._get_provider_name()
-        return "stdout_test"
-      end
-
-      local result = nil
-      local completed = false
-      local observer = {
-        on_start = function() end,
-        on_stdout = function() end,
-        on_stderr = function() end,
-        on_complete = function(status, text)
-          result = { status = status, text = text }
-          completed = true
-        end,
-      }
-
-      stdout_provider:make_request("test", context, observer)
-
-      vim.wait(2000, function()
-        return completed
-      end)
-
-      eq("success", result.status)
-      eq("stdout response", vim.trim(result.text))
-    end)
-
     it("uses tmp_file when it has content", function()
       local _99 = require("99")
       _99.setup({})
@@ -359,7 +314,7 @@ describe("providers", function()
         if attempts == 1 then
           return { "bash", "-c", "exit 1" }
         end
-        return { "bash", "-c", "echo ok" }
+        return { "bash", "-c", "echo ok > " .. context.tmp_file }
       end
       function retry_provider._get_provider_name()
         return "retry_test"
