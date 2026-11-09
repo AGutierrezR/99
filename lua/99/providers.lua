@@ -143,6 +143,15 @@ function BaseProvider:make_request(query, context, observer)
             vim.inspect(obj)
           )
           if attempt_count <= max_retries then
+            vim.notify(
+              string.format(
+                "99: request failed (exit %d), retrying (%d/%d)...",
+                obj.code,
+                attempt_count,
+                max_retries
+              ),
+              vim.log.levels.WARN
+            )
             attempt()
             return
           end
@@ -161,6 +170,14 @@ function BaseProvider:make_request(query, context, observer)
                 return
               end
               if not is_valid(res) and attempt_count <= max_retries then
+                vim.notify(
+                  string.format(
+                    "99: empty/invalid response, retrying (%d/%d)...",
+                    attempt_count,
+                    max_retries
+                  ),
+                  vim.log.levels.WARN
+                )
                 attempt()
                 return
               end
@@ -171,6 +188,14 @@ function BaseProvider:make_request(query, context, observer)
                 return
               end
               if attempt_count <= max_retries then
+                vim.notify(
+                  string.format(
+                    "99: failed to read response, retrying (%d/%d)...",
+                    attempt_count,
+                    max_retries
+                  ),
+                  vim.log.levels.WARN
+                )
                 attempt()
                 return
               end
