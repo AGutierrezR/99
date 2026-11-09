@@ -540,7 +540,54 @@ function _99.setup(opts)
 end
 
 --- @param md string
---- @return _99
+--- @
+--- Pick a saved prompt and run it with a chosen operation.
+function _99.pick_saved_prompt()
+  local state = _99.__get_state()
+  if not state or not state.saved_prompts or #state.saved_prompts == 0 then
+    vim.notify("No saved prompts", vim.log.levels.INFO)
+    return
+  end
+  local prompts = {}
+  for i = #state.saved_prompts, 1, -1 do
+    table.insert(prompts, state.saved_prompts[i])
+  end
+  vim.ui.select(prompts, { prompt = "Saved prompt:" }, function(choice)
+    if not choice then
+      return
+    end
+    _99.visual({ additional_prompt = choice })
+  end)
+end
+
+function _99.delete_saved_prompt()
+  local state = _99.__get_state()
+  if not state or not state.saved_prompts or #state.saved_prompts == 0 then
+    vim.notify("No saved prompts", vim.log.levels.INFO)
+    return
+  end
+
+  local function delete_one()
+    if not state.saved_prompts or #state.saved_prompts == 0 then
+      vim.notify("No more saved prompts", vim.log.levels.INFO)
+      return
+    end
+    local prompts = {}
+    for i = #state.saved_prompts, 1, -1 do
+      table.insert(prompts, state.saved_prompts[i])
+    end
+    vim.ui.select(prompts, { prompt = "Delete saved prompt (Esc to cancel):" }, function(choice)
+      if choice then
+        state:delete_saved_prompt(choice)
+        vim.notify("Prompt deleted", vim.log.levels.INFO)
+        delete_one()
+      end
+    end)
+  end
+
+  delete_one()
+end
+
 function _99.add_md_file(md)
   table.insert(_99_state.md_files, md)
   return _99

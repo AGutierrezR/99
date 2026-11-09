@@ -193,9 +193,10 @@ function State:save_prompt(text)
     return
   end
   text = vim.trim(text)
-  for _, existing in ipairs(self.saved_prompts) do
+  for i, existing in ipairs(self.saved_prompts) do
     if existing == text then
-      return
+      table.remove(self.saved_prompts, i)
+      break
     end
   end
   table.insert(self.saved_prompts, text)
@@ -208,5 +209,21 @@ function State:save_prompt(text)
   end
 end
 
+--- @param text string
+function State:delete_saved_prompt(text)
+  for i, existing in ipairs(self.saved_prompts) do
+    if existing == text then
+      table.remove(self.saved_prompts, i)
+      break
+    end
+  end
+  local dir = vim.fn.fnamemodify(self.prompts_file, ":h")
+  vim.fn.mkdir(dir, "p")
+  local file = io.open(self.prompts_file, "w")
+  if file then
+    file:write(vim.json.encode(self.saved_prompts))
+    file:close()
+  end
+end
 
 return State

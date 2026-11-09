@@ -42,6 +42,16 @@ describe("state", function()
     eq(true, state:active())
   end)
 
+  it("saves a prompt into saved_prompts", function()
+    local state = _99.__get_state()
+    state.prompts_file = vim.fn.tempname()
+    state.saved_prompts = {}
+    state:save_prompt("hello prompt")
+
+    eq(1, #state.saved_prompts)
+    eq("hello prompt", state.saved_prompts[1])
+  end)
+
   it("is active when quickfix window is open", function()
     local state = _99.__get_state()
     local buffer = test_utils.create_file({ "hello" }, "lua", 1, 0)
