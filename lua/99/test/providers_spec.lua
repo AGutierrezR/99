@@ -256,7 +256,10 @@ describe("providers", function()
       file:write("")
       file:close()
 
-      local stdout_provider = setmetatable({}, { __index = Providers.BaseProvider })
+      local stdout_provider = setmetatable(
+        {},
+        { __index = Providers.BaseProvider }
+      )
       function stdout_provider._build_command(_, _, _)
         return { "bash", "-c", "echo 'stdout response'" }
       end
@@ -299,7 +302,10 @@ describe("providers", function()
       file:write("file response")
       file:close()
 
-      local file_provider = setmetatable({}, { __index = Providers.BaseProvider })
+      local file_provider = setmetatable(
+        {},
+        { __index = Providers.BaseProvider }
+      )
       function file_provider._build_command(_, _, _)
         return { "bash", "-c", "echo 'stdout response'" }
       end
@@ -338,10 +344,16 @@ describe("providers", function()
       local context = Prompt.search(state)
       context.tmp_file = vim.fn.tempname()
       local tmpf = io.open(context.tmp_file, "w")
-      if tmpf then tmpf:write("") tmpf:close() end
+      if tmpf then
+        tmpf:write("")
+        tmpf:close()
+      end
 
       local attempts = 0
-      local retry_provider = setmetatable({}, { __index = Providers.BaseProvider })
+      local retry_provider = setmetatable(
+        {},
+        { __index = Providers.BaseProvider }
+      )
       function retry_provider._build_command(_, _, _)
         attempts = attempts + 1
         if attempts == 1 then

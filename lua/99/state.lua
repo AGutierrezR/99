@@ -123,7 +123,8 @@ function State.new(opts)
   local previous = read_state_from_tmp(opts)
   _99_state.tracking = Tracking.new(_99_state, previous)
 
-  _99_state.prompts_file = _99_state.prompts_file or (vim.fn.stdpath("data") .. "/99/prompts.json")
+  _99_state.prompts_file = _99_state.prompts_file
+    or (vim.fn.stdpath("data") .. "/99/prompts.json")
   _99_state.saved_prompts = _99_state:_load_saved_prompts()
 
   return _99_state
@@ -165,8 +166,6 @@ function State:refresh_rules()
   self.rules = Agents.rules(self)
   Extensions.refresh(self)
 end
-
-
 
 --- @return string[]
 function State:_load_saved_prompts()

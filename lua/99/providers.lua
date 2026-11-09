@@ -139,8 +139,11 @@ function BaseProvider:make_request(query, context, observer)
           return
         end
         if obj.code ~= 0 then
-          local str =
-            string.format("process exit code: %d\n%s", obj.code, vim.inspect(obj))
+          local str = string.format(
+            "process exit code: %d\n%s",
+            obj.code,
+            vim.inspect(obj)
+          )
           if attempt_count <= max_retries then
             attempt()
             return

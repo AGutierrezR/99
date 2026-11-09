@@ -493,10 +493,18 @@ function Prompt:finalize()
   self:_read_md_files()
 
   local prompts = self._99.prompts
-  if prompts and prompts.prompts and type(prompts.prompts.role) == "function" then
+  if
+    prompts
+    and prompts.prompts
+    and type(prompts.prompts.role) == "function"
+  then
     local ok, role = pcall(prompts.prompts.role)
     if ok and type(role) == "string" and vim.trim(role) ~= "" then
-      table.insert(self.agent_context, 1, "<Role>\n" .. vim.trim(role) .. "\n</Role>")
+      table.insert(
+        self.agent_context,
+        1,
+        "<Role>\n" .. vim.trim(role) .. "\n</Role>"
+      )
     end
   end
 

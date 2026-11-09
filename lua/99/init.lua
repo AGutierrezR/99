@@ -576,13 +576,17 @@ function _99.delete_saved_prompt()
     for i = #state.saved_prompts, 1, -1 do
       table.insert(prompts, state.saved_prompts[i])
     end
-    vim.ui.select(prompts, { prompt = "Delete saved prompt (Esc to cancel):" }, function(choice)
-      if choice then
-        state:delete_saved_prompt(choice)
-        vim.notify("Prompt deleted", vim.log.levels.INFO)
-        delete_one()
+    vim.ui.select(
+      prompts,
+      { prompt = "Delete saved prompt (Esc to cancel):" },
+      function(choice)
+        if choice then
+          state:delete_saved_prompt(choice)
+          vim.notify("Prompt deleted", vim.log.levels.INFO)
+          delete_one()
+        end
       end
-    end)
+    )
   end
 
   delete_one()
