@@ -25,6 +25,53 @@ describe("prompt", function()
     eq("search: find important changes", prompt:summary())
   end)
 
+  it("auto-saves successful prompt", function()
+    local provider = test_utils.TestProvider.new()
+    _99.setup(test_utils.get_test_setup_options({}, provider))
+
+    _99.search({ additional_prompt = "saved prompt text" })
+    provider:resolve("success", "ok")
+    test_utils.next_frame()
+
+    local state = _99.__get_state()
+    local found = false
+    for _, p in ipairs(state.saved_prompts) do
+      if p == "saved prompt text" then
+        found = true
+      end
+    end
+    assert.is_true(found)
+  end)
+
+  it("deletes saved prompt", function()
+    local provider = test_utils.TestProvider.new()
+    _99.setup(test_utils.get_test_setup_options({}, provider))
+
+    local state = _99.__get_state()
+    state:save_prompt("to delete")
+
+    local original_select = vim.ui.select
+    local called = false
+    vim.ui.select = function(_, _, cb)
+      if not called then
+        called = true
+        cb("to delete")
+      else
+        cb(nil)
+      end
+    end
+    _99.delete_saved_prompt()
+    vim.ui.select = original_select
+
+    local found = false
+    for _, p in ipairs(state.saved_prompts) do
+      if p == "to delete" then
+        found = true
+      end
+    end
+    assert.is_false(found)
+  end)
+
   it("injects role prompt into agent_context on finalize", function()
     local provider = test_utils.TestProvider.new()
     _99.setup(test_utils.get_test_setup_options({}, provider))

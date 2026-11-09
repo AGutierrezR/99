@@ -249,6 +249,8 @@ No description.
 | `prompts` | `table \| nil` | - |
 | `max_retries` | `number \| nil` | 1 |
 | `validate_output` | `function \| nil` | - |
+| `auto_save_prompts` | `boolean \| nil` | true |
+| `prompts_file` | `string \| nil` | data/99/prompts.json |
 ### API
 
 #### logger
@@ -289,6 +291,12 @@ Number of automatic retries when output is invalid/empty (default 1).
 
 #### validate_output
 Custom validation function `fun(response, context) -> boolean` for retry logic.
+
+#### auto_save_prompts
+Automatically save successful user prompts to `prompts_file`.
+
+#### prompts_file
+Path to JSON file storing saved prompts.
 
 ## _99.State.Tracking
 No description.

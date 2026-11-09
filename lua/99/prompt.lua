@@ -249,6 +249,9 @@ function Prompt:_observer(obs)
     end,
     on_complete = function(status, res)
       self.state = status
+      if status == "success" and self._99.auto_save_prompts then
+        self._99:save_prompt(self.user_prompt)
+      end
       if obs then
         obs.on_complete(status, res)
       end

@@ -32,6 +32,9 @@ end
 --- @field provider_override _99.Providers.BaseProvider?
 --- @field provider_extra_args string[]
 --- @field max_retries number
+--- @field auto_save_prompts boolean
+--- @field prompts_file string
+--- @field saved_prompts string[]
 --- @field validate_output function?
 --- @field rules _99.Agents.Rules
 --- @field tracking _99.State.Tracking
@@ -48,6 +51,9 @@ local function create()
     display_errors = false,
     provider_override = nil,
     tmp_dir = nil,
+    auto_save_prompts = true,
+    prompts_file = nil,
+    saved_prompts = {},
   }
 end
 
@@ -79,6 +85,8 @@ function State.new(opts)
   _99_state.provider_extra_args = opts.provider_extra_args or {}
   _99_state.max_retries = opts.max_retries or 1
   _99_state.validate_output = opts.validate_output
+  _99_state.auto_save_prompts = (opts.auto_save_prompts ~= false)
+  _99_state.prompts_file = opts.prompts_file
   _99_state.completion = opts.completion or default_completion()
   _99_state.completion.custom_rules = _99_state.completion.custom_rules or {}
   _99_state.completion.files = _99_state.completion.files or {}
@@ -114,6 +122,9 @@ function State.new(opts)
 
   local previous = read_state_from_tmp(opts)
   _99_state.tracking = Tracking.new(_99_state, previous)
+
+  _99_state.prompts_file = _99_state.prompts_file or (vim.fn.stdpath("data") .. "/99/prompts.json")
+  _99_state.saved_prompts = _99_state:_load_saved_prompts()
 
   return _99_state
 end
@@ -155,6 +166,47 @@ function State:refresh_rules()
   Extensions.refresh(self)
 end
 
+
+
+--- @return string[]
+function State:_load_saved_prompts()
+  local path = self.prompts_file
+  local file = io.open(path, "r")
+  if not file then
+    return {}
+  end
+  local content = file:read("*a")
+  file:close()
+  local ok, decoded = pcall(vim.json.decode, content)
+  if ok and type(decoded) == "table" then
+    return decoded
+  end
+  return {}
+end
+
+--- @param text string
+function State:save_prompt(text)
+  if not self.auto_save_prompts then
+    return
+  end
+  if type(text) ~= "string" or vim.trim(text) == "" then
+    return
+  end
+  text = vim.trim(text)
+  for _, existing in ipairs(self.saved_prompts) do
+    if existing == text then
+      return
+    end
+  end
+  table.insert(self.saved_prompts, text)
+  local dir = vim.fn.fnamemodify(self.prompts_file, ":h")
+  vim.fn.mkdir(dir, "p")
+  local file = io.open(self.prompts_file, "w")
+  if file then
+    file:write(vim.json.encode(self.saved_prompts))
+    file:close()
+  end
+end
 
 
 return State

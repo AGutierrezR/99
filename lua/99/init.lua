@@ -62,6 +62,8 @@ end
 --- @field prompts? table
 --- @field max_retries? number
 --- @field validate_output? fun(response: string, context: _99.Prompt): boolean
+--- @field auto_save_prompts? boolean
+--- @field prompts_file? string
 
 --- @type _99.State
 local _99_state
@@ -513,6 +515,18 @@ function _99.setup(opts)
     assert(
       type(opts.validate_output) == "function",
       "opts.validate_output must be a function"
+    )
+  end
+  if opts.auto_save_prompts ~= nil then
+    assert(
+      type(opts.auto_save_prompts) == "boolean",
+      "opts.auto_save_prompts must be a boolean"
+    )
+  end
+  if opts.prompts_file ~= nil then
+    assert(
+      type(opts.prompts_file) == "string",
+      "opts.prompts_file must be a string"
     )
   end
 
